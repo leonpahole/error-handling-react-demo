@@ -8,6 +8,7 @@ import { AuthModels } from "../../util/auth/auth.models";
 import { AuthService } from "../../util/auth/auth-standard-error-handling.service";
 import { AxiosError } from "axios";
 import { RestUtils } from "../../util/rest/rest.utils";
+import { AuthQueries } from "../../util/auth/auth-standard-error-handling.queries";
 
 type LoginFormValues = AuthModels.LoginRequest;
 
@@ -21,6 +22,7 @@ const validationSchema = Yup.object().shape({
 type LoginError = "invalidCredentials" | "internal" | "unknown";
 
 export const LoginForm: React.FC = () => {
+  const useLogin = AuthQueries.useLogin();
   const [errorType, setErrorType] = React.useState<LoginError | null>(null);
 
   return (
@@ -40,10 +42,10 @@ export const LoginForm: React.FC = () => {
         validationSchema={validationSchema}
         onSubmit={async (values, { setErrors, setSubmitting, resetForm }) => {
           try {
-            await AuthService.login(values);
-            alert("Login successful!");
+            await useLogin.mutateAsync(values);
             setErrorType(null);
             resetForm();
+            alert("Login successful!");
           } catch (e) {
             const error = e as AxiosError;
             if (error.response?.status === 401) {
