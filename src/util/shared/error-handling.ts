@@ -76,7 +76,6 @@ export class ErrorHandler<CodeT extends string> {
   }
 
   public getErrorCode(error: unknown): CodeT | GeneralErrorCodes | null {
-    console.log(error);
     if (error instanceof ApplicationException) {
       return error.code;
     }
