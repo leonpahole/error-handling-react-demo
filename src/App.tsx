@@ -1,4 +1,5 @@
-import { LoginForm } from "./components/loginForm/LoginForm";
+import { LoginForm } from "./components/loginForm/LoginFormStandardErrorHandling";
+import "./util/rest/rest-mock.ts";
 
 function App() {
   return <LoginForm />;
