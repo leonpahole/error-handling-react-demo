@@ -35,8 +35,8 @@ export const LoginForm: React.FC = () => {
 
       <Formik<LoginFormValues>
         initialValues={{
-          email: "unactivated@test.com",
-          password: "test",
+          email: "",
+          password: "",
         }}
         validationSchema={validationSchema}
         onSubmit={async (values, { setErrors, setSubmitting, resetForm }) => {
