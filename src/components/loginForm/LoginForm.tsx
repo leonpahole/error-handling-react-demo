@@ -5,9 +5,8 @@ import * as Yup from "yup";
 import { FormikTextInput } from "../inputs/TextInput/FormikTextInput";
 import "./LoginForm.css";
 import { AuthModels } from "../../util/auth/auth.models";
-import { AxiosError } from "axios";
-import { RestUtils } from "../../util/rest/rest.utils";
-import { AuthQueries } from "../../util/auth/auth-standard-error-handling.queries";
+import { AuthQueries } from "../../util/auth/auth.queries";
+import { AuthErrors } from "../../util/auth/auth.errors";
 
 type LoginFormValues = AuthModels.LoginRequest;
 
@@ -18,15 +17,14 @@ const validationSchema = Yup.object().shape({
   password: Yup.string().required("Please enter your password."),
 });
 
-type LoginError = "invalidCredentials" | "internal" | "network";
-
 export const LoginForm: React.FC = () => {
   const useLogin = AuthQueries.useLogin();
-  const [errorType, setErrorType] = React.useState<LoginError | null>(null);
+
+  const errorType = AuthErrors.Login.getErrorCode(useLogin.error);
 
   return (
     <div className="login-form-container">
-      <h1 className="login-form-header">Login (standard error handling)</h1>
+      <h1 className="login-form-header">Login (improved error handling)</h1>
       <p>
         Use the following emails to simulate states: unactivated@test.com,
         nonexisting@test.com, invalidCredentials@test.com, internal@test.com,
@@ -42,39 +40,16 @@ export const LoginForm: React.FC = () => {
         onSubmit={async (values, { setErrors, setSubmitting, resetForm }) => {
           try {
             await useLogin.mutateAsync(values);
-            setErrorType(null);
             resetForm();
             alert("Login successful!");
           } catch (e) {
-            const error = e as AxiosError;
-            if (error.response?.status === 401) {
-              // 401 can mean multiple errors - check which error it is
-              const isNotActivated = RestUtils.doesServerErrorMessageContain(
-                error,
-                "User is not activated!"
-              );
+            const error = AuthErrors.Login.getErrorCode(e);
 
-              if (isNotActivated) {
-                setErrors({ email: "User is not activated!" });
-                return;
-              }
-
-              const isNonExisting = RestUtils.doesServerErrorMessageContain(
-                error,
-                "User does not exist!"
-              );
-
-              if (isNonExisting) {
-                setErrors({ email: "User doesn't exist!" });
-                return;
-              }
-            } else if (error.response?.status === 403) {
-              setErrorType("invalidCredentials");
-            } else if (error.response?.status === 500) {
-              setErrorType("internal");
-            } else if (error.code === "ERR_NETWORK") {
-              setErrorType("network");
-            } else {
+            if (error === "USER_NOT_ACTIVATED") {
+              setErrors({ email: "User is not activated!" });
+            } else if (error === "USER_DOESNT_EXIST") {
+              setErrors({ email: "User doesn't exist!" });
+            } else if (error === "UNKNOWN_ERROR") {
               alert("An unknown error occurred!");
             }
           } finally {
@@ -108,19 +83,19 @@ export const LoginForm: React.FC = () => {
               Submit
             </button>
 
-            {errorType === "invalidCredentials" && (
+            {errorType === "INVALID_CREDENTIALS" && (
               <p className="login-form-error-message">
                 Invalid credentials! Please try again!
               </p>
             )}
 
-            {errorType === "network" && (
+            {errorType === "NETWORK_ERROR" && (
               <p className="login-form-error-message">
                 A network error occurred! Are you connected to the internet?
               </p>
             )}
 
-            {errorType === "internal" && (
+            {errorType === "INTERNAL_ERROR" && (
               <p className="login-form-error-message">
                 An internal error occurred! Please try again later or check the
                 status of the service on the <a>status page</a>.
